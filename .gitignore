@@ -1,7 +1,11 @@
+osmmap.img
+osmmap.tdb
 *~
 gmapsupp.img
 config.xml
 *.bz2
 *.pyc
+*.typ
+*.csv
 osmData
 xmlData

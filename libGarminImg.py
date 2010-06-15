@@ -48,7 +48,7 @@ class GarminImg :
 		"""Return the little endian byte representation of the 32bit input string"""
 		return ('%08x' % (int(id))).decode('hex')[::-1]
 
-	def updateID(self, toID) :
+	def updateID(self, toID, prefix='') :
 		"""Changes the map ID. The ID is saved in binary format as well 
 		as a hash which needs to be correct, otherwise the map will not 
 		be displayed on the Garmin device (most likely)."""
@@ -63,7 +63,7 @@ class GarminImg :
 			# Find current map ID and print it (just for fun)
 			l = pos+GarminImg.offsetMapID
 			id = map[l : l+4][::-1] # Need to reverse.
-			print('Old map ID at %x: 0x%08x = %s' % (pos, hex2dec(id.encode('hex')), hex2dec(id.encode('hex'))))
+			print('%sOld map ID at %x: 0x%08x = %s' % (prefix, pos, hex2dec(id.encode('hex')), hex2dec(id.encode('hex'))))
 			
 			# Set the new map ID.
 			map[l : l+4] = self.binWord(toID)
@@ -72,24 +72,24 @@ class GarminImg :
 			# Get the header length. Given by the first byte in the header section. 
 			# For images created by mkgmap usually 188 bytes.
 			headerLength = bin2dec(map[pos])
-			print('Header length: %d' % (headerLength))
+			print('%sHeader length: %d' % (prefix, headerLength))
 			
 			
 			# Find current ID hash and print it (also just for fun)
 			l = pos+GarminImg.offsetMapValues
 			values = [map[l+4*i : l+4*(i+1)][::-1] for i in range(4)]
-			print('Values: %s %s %s %s (original)' % (bin2hex(values[0]), bin2hex(values[1]), bin2hex(values[2]), bin2hex(values[3])))
+			print('%sValues: %s %s %s %s (original)' % (prefix, bin2hex(values[0]), bin2hex(values[1]), bin2hex(values[2]), bin2hex(values[3])))
 			
 			# Calculate new ID hash and write it to the img file.
 			mv = MapValues(toID, headerLength)
 			mv.calculate()
-			print('Values: %08x %08x %08x %08x (calculated)' % (mv.value(0), mv.value(1), mv.value(2), mv.value(3)))
+			print('%sValues: %08x %08x %08x %08x (calculated)' % (prefix, mv.value(0), mv.value(1), mv.value(2), mv.value(3)))
 			for i in range(4) : 
 				map[l+4*i : l+4*(i+1)] = self.binWord(mv.value(i))
 			
 
 
-	def rename(self, toID) :
+	def rename(self, toID, prefix='') :
 		"""Renames the file names of all subfiles in the File Allocation Table (FAT) section.
 		Example: 00010230RGN, 00010230TRE, 00010230LBL (8 digit name, file type)"""
 		try :
@@ -118,13 +118,13 @@ class GarminImg :
 						pos += 0x200
 				
 				# Change the map ID too.
-				self.updateID(toID)
+				self.updateID(toID, prefix)
 				
 				return (count, renamed, oldid)
 			else :
-				print('Wrong length (%s) of ID %s.' % (len(self.ID), toID))
+				print('%sWrong length (%s) of ID %s.' % (prefix, len(self.ID), toID))
 		except ValueError :
-			print('Wrong ID: %s (needs to be 8 digits)' % toID)
+			print('%sWrong ID: %s (needs to be 8 digits)' % (prefix, toID))
 		return None
 
 class MapValues :

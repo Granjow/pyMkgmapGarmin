@@ -73,7 +73,7 @@ parser = OptionParser(usage='Usage: %prog [options] [.osm.bz2 files] [.maplist f
 \t\tPlain text files with a map filename on each line.\n\
 \t\tWill add the maps given there to the list.')
 parser.add_option('--nogeonames', action='store_false', default=True, dest='bGeonames', help='Do not use geonames file for city entries. (Is otherwise downloaded automatically if not available)')
-parser.add_option('--noreuse', action='store_false', default=True, dest='bNoReuse', help='Do not re-use already compiled images, also if they are identical')
+parser.add_option('--noreuse', action='store_true', default=False, dest='bNoReuse', help='Do not re-use already compiled images, also if they are identical')
 parser.add_option('--backup', action='store_true', default=False, dest='bBackup', help='Create a backup of all settings. TODO (not yet implemented)')
 parser.add_option('-s', '--style-file', action='store', dest='fStyle', help='Optional style file (directory or zip)')
 parser.add_option('-t', '--typ-file', action='store', dest='fTyp', help='Optional TYP file')
@@ -187,10 +187,11 @@ class MapThread(threading.Thread) :
             self.prefix = str(self.mapNr).zfill(4)
             self.id = self.prefix + '0000'
             self.spid = str(self.mapNr) + ' \t'
+            self.spids = re.sub('\d', ' ', self.spid)
             
             MapThread.MapLock.acquire()
             self.sdir = os.path.join(wd, self.map.text(MapInfo.I_DIR_SPLITS))
-            print("sdir: %s, wd: %s, sd: %s" % (self.sdir, wd, self.map.text(MapInfo.I_DIR_SPLITS)))
+            print("%ssdir: %s, \n%swd: %s, \n%ssd: %s" % (self.spid, self.sdir, self.spids, wd, self.spids, self.map.text(MapInfo.I_DIR_SPLITS)))
             self.osmfile = os.path.join(wd, self.map.text(MapInfo.I_FILENAME_MAP))
             MapThread.MapLock.release()
             
@@ -206,20 +207,29 @@ class MapThread(threading.Thread) :
         self.err = False
         
         
-        # Check whether maps can be re-used without re-compiling
-        self.filelist = glob.glob(os.path.join(self.sdir, '*.img'))
+        # Check whether maps can be re-used without re-compiling #
+        self.imgfilelist = glob.glob(os.path.join(self.sdir, '*.img'))
         self.available = False
-        self.stat = str(os.stat(self.osmfile))
+        self.osmStat = str(os.stat(self.osmfile))
         
         if self.map.text(MapInfo.I_MAP_STAT) == fail :
             print('%sBuilding this map failed last time.' % (self.spid))
         
-        if (not options.bNoReuse) and self.stat == self.map.text(MapInfo.I_MAP_STAT) and len(self.filelist) > 0 :
-            self.stat = str(os.stat(self.filelist[0]))
+        if options.bNoReuse :
+            print('%sReuse of %s not desired.' % (self.spid, self.osmfile))
+        elif self.osmStat != self.map.text(MapInfo.I_MAP_STAT) :
+            print('%sThe osm file %s has changed in the meantime, need to rebuild it.' % (self.spid, self.osmfile))
+        elif len(self.imgfilelist) <= 0:
+            print('%sNo image files available for %s, need to build them.' % (self.spid, self.osmfile))
+        elif options.fStyle != self.map.text(MapInfo.I_STYLE_FILE) :
+            print('%sStyle file has changed, map needs to be rebuilt.' % (self.spid))
+        else :
+            self.stat = str(os.stat(self.imgfilelist[0]))
             if self.stat == self.map.text(MapInfo.I_IMG_STAT) :
                 
-                print('%sMap did not change since last time; Re-using it. \nRenaming original files %s if necessary.' % (self.spid, self.filelist))
-                for self.file in self.filelist :
+                print('%sMap did not change since last time; Re-using it.' % (self.spid))
+                print('%sRenaming original files %s if necessary.' % (self.spid, self.imgfilelist))
+                for self.file in self.imgfilelist :
                     
                     self.o = reImgname.match(self.file)
                     
@@ -227,15 +237,17 @@ class MapThread(threading.Thread) :
                         # Change ID in the file itself
                         id = self.prefix + reImgNr.search(self.file).group(1)
                         gi = GarminImg(self.file)
-                        t = gi.rename(id)
+                        t = gi.rename(id, self.spid)
                         if not t == None :
-                            print('%sReplaced old map ID (%s) with new one (%s) %s times in %s.' % (self.spid, t[2], id, t[0], self.file))
+                            print('%sReplaced old map ID (%s) with new one (%s) %s times \n%sin %s.' % (self.spid, t[2], id, t[0], self.spids, self.file))
                         # Change filename
                         os.rename(self.file, self.o.group(1) + self.prefix + self.o.group(3))
-                        print('%sRenamed %s to %s.' % (self.spid, self.file, self.o.group(1) + self.prefix + self.o.group(3)))
+                        print('%sRenamed %s \n%sto %s.' % (self.spid, self.file, self.spids, self.o.group(1) + self.prefix + self.o.group(3)))
                         
                 self.available = True
-        self.filelist = None; self.stat = None; self.o = None; self.file = None;
+            else :
+                print("%sMap info changed from \n%s%s to \n%s%s, cannot re-use, need to rebuild." % (self.spid, self.spids, self.map.text(MapInfo.I_IMG_STAT), self.spids, self.stat))
+        self.imgfilelist = None; self.stat = None; self.osmStat = None; self.o = None; self.file = None;
 
         # We need to re-build the map.
         if not self.available :
@@ -309,7 +321,7 @@ class MapThread(threading.Thread) :
             if len(self.filelist) > 0 :
                 # Write map file status
                 self.map.setText(MapInfo.I_IMG_STAT, str(os.stat(self.filelist[0])))
-            print('%sProcess finished. Images: %s' % (self.spid, self.filelist))
+            print('%sProcess FINISHED. Images: %s' % (self.spid, self.filelist))
             self.filelist = None; self.file = None;
         else :
             print('%sHow did we get there? Might be an error.' % (self.spid))
@@ -426,7 +438,11 @@ except OSError :
 
 
 # Create gmapsupp.img from all .img files
-print('Using available images: %s' % (imglist))
+list = '['
+for img in imglist :
+    list += img.path + ', '
+list += ']'
+print('Using available images: %s' % (list))
 
 files = ''
 reID = re.compile('(\d{8}).img')

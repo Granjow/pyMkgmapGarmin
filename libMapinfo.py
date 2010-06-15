@@ -6,7 +6,7 @@ from libSettingsfile import SettingsFile
 import os
 import re
 
-reMap = re.compile('(?:.*/)([^/]*).osm.bz2')
+reMap = re.compile('(?:.*/)?([^/]*).osm.bz2')
 
 class MapInfo(SettingsFile) :
     # Variables
@@ -17,11 +17,13 @@ class MapInfo(SettingsFile) :
     I_MAP_STAT = 'map-stat'
     I_IMG_STAT = 'img-stat'
     I_MAP_NUMBER = 'map-number'
+    I_STYLE_FILE = 'style-file'
 
     def __init__(self, mapfilename, dir=os.path.join('.','xmlData'), splitDir=os.path.join('.','osmData')) :
         try :
             self.mapID = reMap.match(mapfilename).group(1)
         except AttributeError :
+            print('Error reading the map name from %s! Using default instead.' % (mapfilename))
             self.mapID = 'default'
         
         self.filename = os.path.join(dir, self.mapID + '.xml')
