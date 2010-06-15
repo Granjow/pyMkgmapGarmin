@@ -79,8 +79,8 @@ parser.add_option('-s', '--style-file', action='store', dest='fStyle', help='Opt
 parser.add_option('-t', '--typ-file', action='store', dest='fTyp', help='Optional TYP file')
 (options, args) = parser.parse_args()
 
-if options.fStyle != "" : options.fStyle = os.path.abspath(options.fStyle)
-if options.fTyp != "" : options.fTyp = os.path.abspath(options.fTyp)
+if options.fStyle is not None : options.fStyle = os.path.abspath(options.fStyle)
+if options.fTyp is not None : options.fTyp = os.path.abspath(options.fTyp)
 
 
 
@@ -278,7 +278,7 @@ class MapThread(threading.Thread) :
                 # Create a .img file for this map
                 print('%swd: %s' % (self.spid, os.getcwd()))
                 self.args = ''
-                if options.fStyle != "" : self.args += " --style-file=%s" % (options.fStyle)
+                if options.fStyle is not None : self.args += " --style-file=%s" % (options.fStyle)
                 cmd = 'cd %s && java -enableassertions -Xmx%s -jar %s --adjust-turn-headings --check-roundabouts --merge-lines --keep-going --remove-short-arcs --latin1 --route --make-all-cycleways --add-pois-to-areas --preserve-element-order --location-autofill=1 --country-name="%s" --country-abbr=%s --family-name="map_%s" %s -n %s %s' % (self.sdir, mki.text(MkgmapInfo.I_RAM), mkgmap, self.map.text(MapInfo.I_CNAME, 'COUNTRY'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.args, self.id, self.filesGz)
                 print('%s%s', (self.spid, cmd))
                 ret = os.system(cmd)
@@ -433,6 +433,10 @@ reID = re.compile('(\d{8}).img')
 
 for item in imglist :
     files += ' --family-id="%s" %s' % (item.id, item.path)
-cmd = 'java -Xmx%s -jar %s --gmapsupp %s %s' % (mki.text(MkgmapInfo.I_RAM), mkgmap, files, options.fTyp)
+
+args = ""
+if options.fTyp is not None : args += options.fTyp
+
+cmd = 'java -Xmx%s -jar %s --gmapsupp %s %s' % (mki.text(MkgmapInfo.I_RAM), mkgmap, files, args)
 print(cmd)
 os.system(cmd)

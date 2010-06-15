@@ -1,2 +1,5 @@
 Example invocation:
 $ python pyMkgmapGarmin.py switzerland.osm.bz2 liechtenstein.osm.bz2 austria.osm.bz2
+
+Development:
+The .gitignore file prevents the use of «git add *». «git add .» instead works.

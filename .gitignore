@@ -1,0 +1,7 @@
+*~
+gmapsupp.img
+config.xml
+*.bz2
+*.pyc
+osmData
+xmlData
