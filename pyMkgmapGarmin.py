@@ -221,8 +221,8 @@ class MapThread(threading.Thread) :
             print('%sThe osm file %s has changed in the meantime, need to rebuild it.' % (self.spid, self.osmfile))
         elif len(self.imgfilelist) <= 0:
             print('%sNo image files available for %s, need to build them.' % (self.spid, self.osmfile))
-        elif options.fStyle != self.map.text(MapInfo.I_STYLE_FILE) :
-            print('%sStyle file has changed, map needs to be rebuilt.' % (self.spid))
+        elif str(options.fStyle) != self.map.text(MapInfo.I_STYLE_FILE) :
+            print('%sStyle file has changed from %s to %s, map needs to be rebuilt.' % (self.spid, self.map.text(MapInfo.I_STYLE_FILE), options.fStyle))
         else :
             self.stat = str(os.stat(self.imgfilelist[0]))
             if self.stat == self.map.text(MapInfo.I_IMG_STAT) :
@@ -318,6 +318,7 @@ class MapThread(threading.Thread) :
                     imglist.append(ImgItem(self.file, self.mapNr))
                 MapThread.MapLock.release()
             
+            self.map.setText(MapInfo.I_STYLE_FILE, options.fStyle)
             if len(self.filelist) > 0 :
                 # Write map file status
                 self.map.setText(MapInfo.I_IMG_STAT, str(os.stat(self.filelist[0])))
