@@ -1,0 +1,2 @@
+Example invocation:
+$ python pyMkgmapGarmin.py switzerland.osm.bz2 liechtenstein.osm.bz2 austria.osm.bz2

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2009, Simon A. Eugster <simon.eu@gmail.com>
+# Copyright (c) 2009-2010, Simon A. Eugster <simon.eu@gmail.com>
 # License: GNU General Public License, see http://www.gnu.org/licenses/gpl.html
 # Download: http://granjow.net/projects.html#garmin
 
