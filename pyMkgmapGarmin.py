@@ -77,6 +77,7 @@ parser.add_option('--noreuse', action='store_true', default=False, dest='bNoReus
 parser.add_option('--backup', action='store_true', default=False, dest='bBackup', help='Create a backup of all settings. TODO (not yet implemented)')
 parser.add_option('-s', '--style-file', action='store', dest='fStyle', help='Optional style file (directory or zip)')
 parser.add_option('-t', '--typ-file', action='store', dest='fTyp', help='Optional TYP file')
+parser.add_option('-f', '--family-id', action='store', default="1", dest='sFamId', help='Optional family ID (shall match with TYP file)')
 (options, args) = parser.parse_args()
 
 if options.fStyle is not None : options.fStyle = os.path.abspath(options.fStyle)
@@ -449,11 +450,11 @@ files = ''
 reID = re.compile('(\d{8}).img')
 
 for item in imglist :
-    files += ' --family-id="%s" %s' % (item.id, item.path)
+    files += ' %s' % (item.path)
 
 args = ""
 if options.fTyp is not None : args += options.fTyp
 
-cmd = 'java -Xmx%s -jar %s --gmapsupp %s %s' % (mki.text(MkgmapInfo.I_RAM), mkgmap, files, args)
+cmd = 'java -Xmx%s -jar %s --gmapsupp --family-id=%s %s %s' % (mki.text(MkgmapInfo.I_RAM), mkgmap, options.sFamId, files, args)
 print(cmd)
 os.system(cmd)
