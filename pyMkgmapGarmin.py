@@ -78,6 +78,7 @@ parser.add_option('--backup', action='store_true', default=False, dest='bBackup'
 parser.add_option('-s', '--style-file', action='store', dest='fStyle', help='Optional style file (directory or zip)')
 parser.add_option('-t', '--typ-file', action='store', dest='fTyp', help='Optional TYP file')
 parser.add_option('-f', '--family-id', action='store', default="1", dest='sFamId', help='Optional family ID (shall match with TYP file)')
+parser.add_option('-n', '--max-nodes', action='store', dest='iMaxNodes', help='Maximum nodes per map segment')
 (options, args) = parser.parse_args()
 
 if options.fStyle is not None : options.fStyle = os.path.abspath(options.fStyle)
@@ -224,6 +225,8 @@ class MapThread(threading.Thread) :
             print('%sNo image files available for %s, need to build them.' % (self.spid, self.osmfile))
         elif str(options.fStyle) != self.map.text(MapInfo.I_STYLE_FILE) :
             print('%sStyle file has changed from %s to %s, map needs to be rebuilt.' % (self.spid, self.map.text(MapInfo.I_STYLE_FILE), options.fStyle))
+        elif str(options.iMaxNodes) < self.map.text(MapInfo.I_MAX_NODES) :
+            print('%sMaximum nodes have decreased from %s to %s, map needs to be rebuilt.' % (self.spid, self.map.text(MapInfo.I_MAX_NODES), options.iMaxNodes))
         else :
             self.stat = str(os.stat(self.imgfilelist[0]))
             if self.stat == self.map.text(MapInfo.I_IMG_STAT) :
@@ -261,6 +264,7 @@ class MapThread(threading.Thread) :
                     os.remove(self.file)
             self.args = ''
             if options.bGeonames : self.args += ' --geonames-file=%s' % (os.path.join(wd, geonames))
+	    if options.iMaxNodes is not None : self.args += ' --max-nodes=%s' % (options.iMaxNodes)
             cmd = 'cd %s && java -Xmx%s -jar %s --mapid=%s --status-freq=1 %s %s 1>%s' % (self.sdir, ram, splitter, self.id, self.args, self.osmfile, log)
             print('%s%s' % (self.spid, cmd))
             self.ret = os.system(cmd)
@@ -320,6 +324,7 @@ class MapThread(threading.Thread) :
                 MapThread.MapLock.release()
             
             self.map.setText(MapInfo.I_STYLE_FILE, options.fStyle)
+            self.map.setText(MapInfo.I_MAX_NODES, options.iMaxNodes)
             if len(self.filelist) > 0 :
                 # Write map file status
                 self.map.setText(MapInfo.I_IMG_STAT, str(os.stat(self.filelist[0])))
