@@ -18,6 +18,7 @@ class MapInfo(SettingsFile) :
     I_IMG_STAT = 'img-stat'
     I_MAP_NUMBER = 'map-number'
     I_STYLE_FILE = 'style-file'
+    I_STYLE_HASH = 'style-hash'
     I_MAX_NODES = 'max-nodes'
 
     def __init__(self, mapfilename, dir=os.path.join('.','xmlData'), splitDir=os.path.join('.','osmData')) :

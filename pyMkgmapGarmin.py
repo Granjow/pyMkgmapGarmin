@@ -46,6 +46,7 @@ from optparse import OptionParser
 from libMapinfo import MapInfo
 from libMkgmapinfo import MkgmapInfo
 from libGarminImg import GarminImg
+from libDirHash import dirHash
 
 
 # Set up variables
@@ -97,23 +98,23 @@ if mki.empty(MkgmapInfo.I_SPLITTER) :
 if mki.empty(MkgmapInfo.I_MKGMAP) :
     mki.setText(MkgmapInfo.I_MKGMAP, 'mkgmap.jar')
 if mki.empty(MkgmapInfo.I_THREADS) :
-    threads = raw_input('How many threads should we use? \nNote that the available RAM will be divided by the number of threads.\nThe more threads, the less RAM for each thread. \n> threads (2): ')
+    threads = raw_input('How many threads should we use? \nNote that the available RAM will be divided by the number of threads.\nThe more threads, the less RAM for each thread. \n> threads (1): ')
     try :
         threads = int(threads)
     except ValueError :
-        threads = 2
+        threads = 1
     if threads < 1 : threads = 1
     mki.setText(MkgmapInfo.I_THREADS, threads)
     mki.removeTag(MkgmapInfo.I_RAM) # Need to re-calculate
     threads = None
 if mki.empty(MkgmapInfo.I_RAM) or mki.empty(MkgmapInfo.I_RAM_TOTAL) :
     threads = int(mki.text(MkgmapInfo.I_THREADS))
-    minram = 512*threads
-    ram = raw_input('How many MB of RAM can we use in total? (default: 1000; minimum: %s) \n> ram (%s): ' % (minram, minram))
+    minram = 1000*threads
+    ram = raw_input('How many MB of RAM can we use in total? (default: 1500; minimum: %s) \n> ram (%s): ' % (minram, minram))
     try :
         ram = int(ram)
     except ValueError :
-        ram = 1000
+        ram = 1500
     if ram < minram :
         ram = minram
     
@@ -225,9 +226,12 @@ class MapThread(threading.Thread) :
             print('%sNo image files available for %s, need to build them.' % (self.spid, self.osmfile))
         elif str(options.fStyle) != self.map.text(MapInfo.I_STYLE_FILE) :
             print('%sStyle file has changed from %s to %s, map needs to be rebuilt.' % (self.spid, self.map.text(MapInfo.I_STYLE_FILE), options.fStyle))
+        elif options.fStyle is not None and dirHash(options.fStyle) != self.map.text(MapInfo.I_STYLE_HASH) :
+            print('%sStyle has been altered, map needs to be rebuilt.' % (self.spid))
         elif str(options.iMaxNodes) < self.map.text(MapInfo.I_MAX_NODES) :
             print('%sMaximum nodes have decreased from %s to %s, map needs to be rebuilt.' % (self.spid, self.map.text(MapInfo.I_MAX_NODES), options.iMaxNodes))
         else :
+            # May be able to re-use map. 
             self.stat = str(os.stat(self.imgfilelist[0]))
             if self.stat == self.map.text(MapInfo.I_IMG_STAT) :
                 
@@ -264,9 +268,9 @@ class MapThread(threading.Thread) :
                     os.remove(self.file)
             self.args = ''
             if options.bGeonames : self.args += ' --geonames-file=%s' % (os.path.join(wd, geonames))
-	    if options.iMaxNodes is not None : self.args += ' --max-nodes=%s' % (options.iMaxNodes)
+            if options.iMaxNodes is not None : self.args += ' --max-nodes=%s' % (options.iMaxNodes)
             cmd = 'cd %s && java -Xmx%s -jar %s --mapid=%s --status-freq=1 %s %s 1>%s' % (self.sdir, ram, splitter, self.id, self.args, self.osmfile, log)
-            print('%s%s' % (self.spid, cmd))
+            print('%sSplitter: %s' % (self.spid, cmd))
             self.ret = os.system(cmd)
             self.filter = None; self.filelist = None; self.args = None; self.file = None
             
@@ -297,7 +301,7 @@ class MapThread(threading.Thread) :
                 self.args = ''
                 if options.fStyle is not None : self.args += " --style-file=%s" % (options.fStyle)
                 cmd = 'cd %s && java -enableassertions -Xmx%s -jar %s --adjust-turn-headings --check-roundabouts --merge-lines --keep-going --remove-short-arcs --latin1 --route --make-all-cycleways --add-pois-to-areas --preserve-element-order --location-autofill=1 --country-name="%s" --country-abbr=%s --family-name="map_%s" %s -n %s %s' % (self.sdir, mki.text(MkgmapInfo.I_RAM), mkgmap, self.map.text(MapInfo.I_CNAME, 'COUNTRY'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.args, self.id, self.filesGz)
-                print('%s%s', (self.spid, cmd))
+                print('%smkgmap:%s', (self.spid, cmd))
                 ret = os.system(cmd)
                 
                 # Write .img file status
@@ -323,8 +327,12 @@ class MapThread(threading.Thread) :
                     imglist.append(ImgItem(self.file, self.mapNr))
                 MapThread.MapLock.release()
             
+            # Update the last used values to detect changes next time
             self.map.setText(MapInfo.I_STYLE_FILE, options.fStyle)
             self.map.setText(MapInfo.I_MAX_NODES, options.iMaxNodes)
+            if options.fStyle is not None :
+                self.map.setText(MapInfo.I_STYLE_HASH, dirHash(options.fStyle))
+            
             if len(self.filelist) > 0 :
                 # Write map file status
                 self.map.setText(MapInfo.I_IMG_STAT, str(os.stat(self.filelist[0])))
