@@ -366,8 +366,11 @@ for text in textlist :
             if o is not None :
                 line = o.group()
                 if not maplist.count(line) > 0 :
-                    maplist.append(line)
-                    print('Added from %s: %s' % (text, line))
+                    if os.path.exists(line) :
+                        maplist.append(line)
+                        print('Added from %s: %s' % (text, line))
+                    else :
+                        print('Not added from %s: %s (missing)' % (text, line))
     except IOError :
         None
 
