@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2009-2010, Simon A. Eugster <simon.eu@gmail.com>
+# Copyright (c) 2009-2011, Simon A. Eugster <simon.eu@gmail.com>
 # License: GNU General Public License, see http://www.gnu.org/licenses/gpl.html
 # Download: http://granjow.net/projects.html#garmin
 
@@ -80,6 +80,7 @@ parser.add_option('-s', '--style-file', action='store', dest='fStyle', help='Opt
 parser.add_option('-t', '--typ-file', action='store', dest='fTyp', help='Optional TYP file')
 parser.add_option('-f', '--family-id', action='store', default="1", dest='sFamId', help='Optional family ID (shall match with TYP file)')
 parser.add_option('-n', '--max-nodes', action='store', dest='iMaxNodes', help='Maximum nodes per map segment')
+parser.add_option('-c', '--read-config', action='store', dest='fMkgmapConfig', help='Optional mkgmap configuration file (the --read-config= option passed to mkgmap)')
 (options, args) = parser.parse_args()
 
 if options.fStyle is not None : options.fStyle = os.path.abspath(options.fStyle)
@@ -467,6 +468,7 @@ for item in imglist :
 
 args = ""
 if options.fTyp is not None : args += options.fTyp
+if options.fMkgmapConfig is not None : args += " --read-config=%s" % (options.fMkgmapConfig)
 
 cmd = 'java -Xmx%s -jar %s --gmapsupp --family-id=%s %s %s' % (mki.text(MkgmapInfo.I_RAM), mkgmap, options.sFamId, files, args)
 print(cmd)
