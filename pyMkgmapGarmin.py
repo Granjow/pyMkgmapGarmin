@@ -261,7 +261,7 @@ class MapThread(threading.Thread) :
         # We need to re-build the map.
         if not self.available :
             # Split the map into smaller files
-            self.filter = '*.osm.gz'
+            self.filter = '*.osm.pbf'
             self.filelist = glob.glob(os.path.join(self.sdir, self.filter))
             if len(self.filelist) > 0 :
                 print('%sRemoving %s: %s' % (self.spid, self.filter, self.filelist))
@@ -282,7 +282,7 @@ class MapThread(threading.Thread) :
             else :
                 self.ret = None
                 
-                self.filelist = glob.glob(os.path.join(self.sdir, '*.osm.gz'))
+                self.filelist = glob.glob(os.path.join(self.sdir, '*.osm.pbf'))
                 print('%sSplit map files are %s' % (self.spid, self.filelist))
                 for self.item in self.filelist :
                     self.filesGz += ' ' + self.item
@@ -301,7 +301,7 @@ class MapThread(threading.Thread) :
                 print('%swd: %s' % (self.spid, os.getcwd()))
                 self.args = ''
                 if options.fStyle is not None : self.args += " --style-file=%s" % (options.fStyle)
-                cmd = 'cd %s && java -enableassertions -Xmx%s -jar %s --adjust-turn-headings --check-roundabouts --merge-lines --keep-going --remove-short-arcs --latin1 --route --make-all-cycleways --add-pois-to-areas --preserve-element-order --location-autofill=1 --country-name="%s" --country-abbr=%s --family-name="map_%s" %s -n %s %s' % (self.sdir, mki.text(MkgmapInfo.I_RAM), mkgmap, self.map.text(MapInfo.I_CNAME, 'COUNTRY'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.args, self.id, self.filesGz)
+                cmd = 'cd %s && java -enableassertions -Xmx%s -jar %s --route  --remove-short-arcs --add-pois-to-areas --index --adjust-turn-headings --check-roundabouts --merge-lines --keep-going --remove-short-arcs --latin1 --route --make-all-cycleways --add-pois-to-areas --preserve-element-order --location-autofill=1 --country-name="%s" --country-abbr=%s --family-name="map_%s" %s -n %s %s' % (self.sdir, mki.text(MkgmapInfo.I_RAM), mkgmap, self.map.text(MapInfo.I_CNAME, 'COUNTRY'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.map.text(MapInfo.I_CABBR, 'ABC'), self.args, self.id, self.filesGz)
                 print('%smkgmap:%s', (self.spid, cmd))
                 ret = os.system(cmd)
                 
