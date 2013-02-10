@@ -66,8 +66,8 @@ reImgNr = re.compile('\d{4}(\d{4})')
 imglist = []
 
 
-parser = OptionParser(usage='Usage: %prog [options] [.osm.bz2 files] [.maplist files]\n\
-\t.osm.bz2 files\n\
+parser = OptionParser(usage='Usage: %prog [options] [.osm.(bz2|pbf) files] [.maplist files]\n\
+\t.osm.(bz2|pbf) files\n\
 \t\tYou can get them from e.g. http://download.geofabrik.de/osm/ \n\
 \t\tor http://downloads.cloudmade.com/.\n\n\
 \t.maplist files\n\
@@ -353,11 +353,11 @@ class MapThread(threading.Thread) :
 
 # Get maps from input argument
 maplist = []
-maplist = [s for s in args if re.compile('(?i).*\.osm\.bz2$').match(s)]
+maplist = [s for s in args if re.compile('(?i).*\.osm\.(bz2|pbf)$').match(s)]
 
 # Read maps from .maplist files, if there are some given
 textlist = [s for s in args if re.compile('(?i).*\.maplist').match(s)]
-reMap = re.compile('(?i)^[^#].*\.osm\.bz2')
+reMap = re.compile('(?i)^[^#].*\.osm\.(bz2|pbf)')
 for text in textlist :
     print('Reading items from %s (items can be commented out with a leading #).' % (text))
     try :
@@ -389,7 +389,7 @@ if c > 0 :
 c = None
 
 if len(maplist) == 0 :
-    imgs = glob.glob('*.osm.bz2')
+    imgs = glob.glob('*.osm.bz2') + glob.glob('*.osm.pbf')
     if len(imgs) > 0 :
         all = raw_input('No map file given. Use these instead?\n%s\n(Y/n) ' % imgs)
         if all.lower() == 'y' or all.lower() == 'j' or all == '' :
@@ -433,7 +433,7 @@ for map in maplist :
     mapinfolist.append(mapinfo)
 mapinfo = None
 if len(mapinfolist) == 0 :
-    print('No input maps (*.osm.bz2) given, exiting.')
+    print('No input maps (*.osm.(bz2|pbf)) given, exiting.')
     sys.exit()
 
 # Build maps

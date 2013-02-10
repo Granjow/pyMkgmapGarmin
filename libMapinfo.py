@@ -6,7 +6,7 @@ from libSettingsfile import SettingsFile
 import os
 import re
 
-reMap = re.compile('(?P<path>.*/)?(?P<name>[^/]*).osm.bz2')
+reMap = re.compile('(?P<path>.*/)?(?P<name>[^/]*).osm.(bz2|pbf)')
 
 class MapInfo(SettingsFile) :
     # Variables
