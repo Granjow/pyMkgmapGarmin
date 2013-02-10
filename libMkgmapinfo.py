@@ -9,7 +9,7 @@ from libSettingsfile import SettingsFile
 import os
 import re
 
-reMap = re.compile('(.*).osm.bz2')
+reMap = re.compile('(.*).osm.(bz2|pbf)')
 
 class MkgmapInfo(SettingsFile) :
     # Variables
